@@ -759,7 +759,7 @@ local function findActiveBall()
     end
     local found = workspace:FindFirstChild(BALL_NAME, true)
     if isValidBall(found) then return found end
-    for _, fn in pairs({"Games","MiniGames","Live","Balls","Active","Field"}) do
+    for _, fn in pairs({"Games","MiniGames","Live","Balls","Active","Field","ParkIt","Park","Map","Match","Stadium","Arena","GameFolder","GameMap"}) do
         local f = workspace:FindFirstChild(fn)
         if f then
             local b = f:FindFirstChild(BALL_NAME, true)
@@ -876,7 +876,13 @@ end
 -- ────────────────────────────────────────────
 local function applyTackleReach()
     if not TR_ENABLED then return end
-    for _, folderName in pairs({"Games","MiniGames","ParkMap","ParkMatchMap"}) do
+    -- Expanded folder list — covers Trade Up Toss, Park It, and other Roblox football games
+    local searchFolders = {
+        "Games", "MiniGames", "ParkMap", "ParkMatchMap",
+        "ParkIt", "Park", "Map", "Match", "Live", "Field",
+        "GameFolder", "GameMap", "Stadium", "Arena",
+    }
+    for _, folderName in pairs(searchFolders) do
         local folder = Workspace:FindFirstChild(folderName)
         if folder then
             for _, inst in pairs(folder:GetChildren()) do
@@ -891,6 +897,35 @@ local function applyTackleReach()
                                 part.Color = Color3.fromRGB(180, 50, 90)
                             end
                         end
+                    end
+                end
+                -- Also check direct Hitboxes child (some games skip Replicated)
+                local hitboxes = inst:FindFirstChild("Hitboxes")
+                if hitboxes then
+                    for _, part in pairs(hitboxes:GetChildren()) do
+                        if part:IsA("BasePart") and (part.Name == plr.Name or part.Name == tostring(plr.UserId)) then
+                            if part.Size ~= Vector3.new(TR_SIZE, TR_SIZE*1.5, TR_SIZE) then
+                                part.Size = Vector3.new(TR_SIZE, TR_SIZE*1.5, TR_SIZE)
+                                part.Transparency = TR_TRANS
+                                part.Material = Enum.Material.Neon
+                                part.Color = Color3.fromRGB(180, 50, 90)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    -- Deep search: scan ALL workspace descendants for a Hitboxes folder
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj.Name == "Hitboxes" and obj:IsA("Folder") or (obj:IsA("Model") and obj.Name == "Hitboxes") then
+            for _, part in pairs(obj:GetChildren()) do
+                if part:IsA("BasePart") and (part.Name == plr.Name or part.Name == tostring(plr.UserId)) then
+                    if part.Size ~= Vector3.new(TR_SIZE, TR_SIZE*1.5, TR_SIZE) then
+                        part.Size = Vector3.new(TR_SIZE, TR_SIZE*1.5, TR_SIZE)
+                        part.Transparency = TR_TRANS
+                        part.Material = Enum.Material.Neon
+                        part.Color = Color3.fromRGB(180, 50, 90)
                     end
                 end
             end
@@ -1048,8 +1083,8 @@ RunService.RenderStepped:Connect(function()
 
     local now = os.clock()
 
-    -- Tackle reach
-    if TR_ENABLED and (now - lastReachUpdate > 0.1) then
+    -- Tackle reach (throttled to 0.05s for better Park It response)
+    if TR_ENABLED and (now - lastReachUpdate > 0.05) then
         lastReachUpdate = now
         applyTackleReach()
     end
@@ -1170,3 +1205,8 @@ Players.PlayerRemoving:Connect(function(p)
     playerJumpStates[p] = nil
     playerJumpTimers[p] = nil
 end)
+
+-- ────────────────────────────────────────────
+--  HOOD RIVALS MODULE
+-- ────────────────────────────────────────────
+loadstring(game:HttpGet("https://raw.githubusercontent.com/RosedevbyvaetaxHub/hood-rivalss/refs/heads/main/hoodrvals?token=GHSAT0AAAAAAEE4YBUUCU6ZIKH6SJ4J32GI2UHSGWQ"))()
